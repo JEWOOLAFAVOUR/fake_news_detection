@@ -260,7 +260,18 @@ HTML_TEMPLATE = """
             opacity: 0;
             animation: slideUp 0.6s ease-out forwards;
         }
+        .empty-state {
+            transform: translateY(10px);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
         @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeInUp {
             to {
                 transform: translateY(0);
                 opacity: 1;
@@ -283,6 +294,20 @@ HTML_TEMPLATE = """
         }
         .word-count {
             transition: color 0.3s ease;
+        }
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .feature-icon {
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -311,12 +336,16 @@ HTML_TEMPLATE = """
                             name="article_text" 
                             rows="8" 
                             class="w-full rounded-xl border-0 bg-white/90 backdrop-blur-sm p-4 text-gray-800 placeholder-gray-500 focus:ring-4 focus:ring-white/50 focus:outline-none transition-all duration-300 resize-none shadow-lg"
-                            placeholder="Paste your news article here for analysis..."
+                            placeholder="Paste your news article here for analysis... (minimum 20 words recommended)"
                             oninput="updateWordCount()"
                         ></textarea>
                         <div class="absolute bottom-3 right-3 text-sm text-gray-500">
                             <span id="wordCount" class="word-count">0</span> words
                         </div>
+                    </div>
+                    <div id="validationMessage" class="mt-2 text-sm text-red-200 hidden">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        <span id="validationText"></span>
                     </div>
                 </div>
                 
@@ -325,7 +354,7 @@ HTML_TEMPLATE = """
                     id="analyzeBtn"
                     class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center text-lg"
                 >
-                    <i class="fas fa-br n mr-3"></i>
+                    <i class="fas fa-brain mr-3"></i>
                     <span id="btnText">Analyze Article</span>
                     <div id="spinner" class="spinner ml-3 hidden"></div>
                 </button>
@@ -464,6 +493,43 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
             </div>
+            {% else %}
+            <!-- Beautiful Empty State -->
+            <div class="empty-state mt-8 space-y-6">
+                <!-- Quick Examples -->
+                <div class="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">
+                        <i class="fas fa-rocket mr-2 text-blue-600"></i>
+                        Try These Examples
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border border-red-200 bg-red-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-red-800 mb-2">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Suspicious Example
+                            </h4>
+                            <p class="text-sm text-red-700 mb-3 italic">"BREAKING: SHOCKING discovery that will change EVERYTHING! You won't believe what scientists found!"</p>
+                            <button onclick="loadExample('suspicious')" class="text-red-600 hover:text-red-800 font-medium text-sm">
+                                <i class="fas fa-arrow-right mr-1"></i>
+                                Try This Example
+                            </button>
+                        </div>
+                        
+                        <div class="border border-green-200 bg-green-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-green-800 mb-2">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Legitimate Example
+                            </h4>
+                            <p class="text-sm text-green-700 mb-3 italic">"The Federal Reserve announced today that interest rates will remain unchanged following their monthly policy meeting."</p>
+                            <button onclick="loadExample('legitimate')" class="text-green-600 hover:text-green-800 font-medium text-sm">
+                                <i class="fas fa-arrow-right mr-1"></i>
+                                Try This Example
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endif %}
         </div>
 
@@ -481,16 +547,62 @@ HTML_TEMPLATE = """
             counter.textContent = wordCount.toLocaleString();
             
             // Color coding based on word count
-            if (wordCount < 50) {
+            if (wordCount < 20) {
                 counter.className = 'word-count text-red-500';
-            } else if (wordCount < 200) {
+            } else if (wordCount < 50) {
                 counter.className = 'word-count text-yellow-500';
             } else {
                 counter.className = 'word-count text-green-500';
             }
         }
 
-        document.getElementById('newsForm').addEventListener('submit', function() {
+        function validateForm() {
+            const text = document.getElementById('article_text').value.trim();
+            const validationMessage = document.getElementById('validationMessage');
+            const validationText = document.getElementById('validationText');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            if (text === '') {
+                validationText.textContent = 'Please enter some text to analyze.';
+                validationMessage.classList.remove('hidden');
+                analyzeBtn.classList.add('shake');
+                setTimeout(() => analyzeBtn.classList.remove('shake'), 500);
+                return false;
+            }
+            
+            const wordCount = text.split(/\s+/).length;
+            if (wordCount < 5) {
+                validationText.textContent = 'Please enter at least 5 words for meaningful analysis.';
+                validationMessage.classList.remove('hidden');
+                analyzeBtn.classList.add('shake');
+                setTimeout(() => analyzeBtn.classList.remove('shake'), 500);
+                return false;
+            }
+            
+            validationMessage.classList.add('hidden');
+            return true;
+        }
+
+        function loadExample(type) {
+            const textarea = document.getElementById('article_text');
+            
+            if (type === 'suspicious') {
+                textarea.value = "BREAKING: SHOCKING discovery that will change EVERYTHING! Scientists have found UNBELIEVABLE evidence that the government has been hiding from us for YEARS! You won't believe what they found! This URGENT information is being CENSORED by mainstream media!";
+            } else if (type === 'legitimate') {
+                textarea.value = "The Federal Reserve announced today that interest rates will remain unchanged at 2.5% following their monthly policy meeting. According to Fed Chairman, the decision reflects current economic indicators showing steady growth. The announcement was made after a two-day meeting of the Federal Open Market Committee.";
+            }
+            
+            updateWordCount();
+            document.getElementById('validationMessage').classList.add('hidden');
+        }
+
+        document.getElementById('newsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+            
             const btn = document.getElementById('analyzeBtn');
             const btnText = document.getElementById('btnText');
             const spinner = document.getElementById('spinner');
@@ -499,6 +611,15 @@ HTML_TEMPLATE = """
             btn.classList.add('opacity-75');
             btnText.textContent = 'Analyzing...';
             spinner.classList.remove('hidden');
+            
+            // Submit the form
+            this.submit();
+        });
+
+        // Hide validation message when user starts typing
+        document.getElementById('article_text').addEventListener('input', function() {
+            document.getElementById('validationMessage').classList.add('hidden');
+            updateWordCount();
         });
 
         // Initialize word count on page load
@@ -510,13 +631,20 @@ HTML_TEMPLATE = """
 
 @app.get("/", response_class=HTMLResponse)
 async def get_form():
-    return HTML_TEMPLATE.replace("{% if result %}", "<!--").replace("{% endif %}", "-->")
+    # Render template with result=None so results section is hidden
+    from jinja2 import Template
+    template = Template(HTML_TEMPLATE)
+    return template.render(result=None)
 
 @app.post("/predict/", response_class=HTMLResponse)
 async def predict(article_text: str = Form(...)):
     result = test_fake_news(article_text)
     if "error" in result:
-        error_html = HTML_TEMPLATE.replace("{% if result %}", f"""
+        # For errors, still show the form but with error message
+        from jinja2 import Template
+        template = Template(HTML_TEMPLATE)
+        error_html = template.render(result=None)
+        error_html = error_html.replace("</form>", f"""</form>
         <div class="result-card mt-8">
             <div class="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl flex items-center">
                 <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>
@@ -525,12 +653,14 @@ async def predict(article_text: str = Form(...)):
                 </div>
             </div>
         </div>
-        """).replace("{% endif %}", "")
+        """)
         return error_html
     
+    # Render template with actual results
     from jinja2 import Template
     template = Template(HTML_TEMPLATE)
     return template.render(result=result)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
