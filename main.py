@@ -240,7 +240,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Fake News Detector</title>
+    <title>Fake News Detector</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -293,7 +293,7 @@ HTML_TEMPLATE = """
             <div class="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-4">
                 <i class="fas fa-search text-3xl text-white"></i>
             </div>
-            <h1 class="text-4xl font-bold text-white mb-2">AI Fake News Detector</h1>
+            <h1 class="text-4xl font-bold text-white mb-2">Fake News Detector</h1>
             <p class="text-white/80 text-lg">Advanced machine learning analysis to verify news authenticity</p>
         </div>
 
@@ -325,7 +325,7 @@ HTML_TEMPLATE = """
                     id="analyzeBtn"
                     class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center text-lg"
                 >
-                    <i class="fas fa-brain mr-3"></i>
+                    <i class="fas fa-br n mr-3"></i>
                     <span id="btnText">Analyze Article</span>
                     <div id="spinner" class="spinner ml-3 hidden"></div>
                 </button>
